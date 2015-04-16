@@ -9,8 +9,8 @@ RUN_TYPE.sim = 0;  % RUN_TYPE = 1 - for DIRECT     &    RUN_TYPE = 0 - for DP on
 RUN_TYPE.emiss_data = 1; % RUN_TYPE.emiss = 1 - maps have emissions  &   RUN_TYPE.emiss = 0 - maps do not have emissions
 RUN_TYPE.emiss_on = 1;  % This is to turn of and on emissions
 RUN_TYPE.plot = 0;  % RUN_TYPE.plot = 1 - plots on  &   RUN_TYPE.plot = 0 - plots off
-RUN_TYPE.soc_size = 0.2;
-RUN_TYPE.trq_size = 15;  % Nm
+RUN_TYPE.soc_size = 0.001;
+RUN_TYPE.trq_size = 5;  % Nm
 %~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~%
 %-----------------Weighing Parameters for DP------------------------------%
 %~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~%
@@ -20,12 +20,12 @@ if RUN_TYPE.emiss_data == 1  % This is just saying wheither or not the engine ma
         weight.NOx = 0*1.4776/0.0560;
         weight.CO = 0*1.4776/0.6835;
         weight.HC = 0*1.4776/0.0177;
-        RUN_TYPE.folder_name = 'LHC - NO Emissions';
+        RUN_TYPE.folder_name = 'main - no emiss';
     else 
         weight.NOx = 2*1.4776/0.0560;
         weight.CO = 0.6*1.4776/0.6835;
         weight.HC = 4*1.4776/0.0177;
-        RUN_TYPE.folder_name = 'LHC - Emissions';  
+        RUN_TYPE.folder_name = 'main - emiss';  
     end
 end
 
@@ -107,10 +107,10 @@ Manipulate_Data_Structure;
 %~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~%
 %%                              ~~ Standard ~~
 
-% cyc_name = 'HWFET';
+cyc_name = 'HWFET';
 % cyc_name = 'UDDS';
 % cyc_name = 'US06';
-cyc_name = 'SHORT_CYC_HWFET';
+% cyc_name = 'SHORT_CYC_HWFET';
 % cyc_name = 'RAMP';
 % cyc_name = 'LA92';
 % cyc_name = 'CONST_65';
