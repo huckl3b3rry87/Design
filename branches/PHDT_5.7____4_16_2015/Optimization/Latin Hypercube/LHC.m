@@ -1,4 +1,4 @@
-clear; 
+% clear; 
 close all; 
 clc
 tic
@@ -7,7 +7,7 @@ tic
 %~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~%
 RUN_TYPE.sim = 0;  % RUN_TYPE = 1 - for DIRECT     &    RUN_TYPE = 0 - for DP only
 RUN_TYPE.emiss_data = 1; % RUN_TYPE.emiss = 1 - maps have emissions  &   RUN_TYPE.emiss = 0 - maps do not have emissions
-RUN_TYPE.emiss_on = 0;  % This is to turn off and on emissions
+% RUN_TYPE.emiss_on = 0;  % This is to turn off and on emissions
 RUN_TYPE.plot = 0;  % RUN_TYPE.plot = 1 - plots on  &   RUN_TYPE.plot = 0 - plots off
 RUN_TYPE.soc_size = 0.001;
 RUN_TYPE.trq_size = 5;  % Nm
@@ -109,7 +109,7 @@ Manipulate_Data_Structure;
 %---------------------Select Drive Cycle----------------------------------%
 %~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~%
 %                              ~~ Standard ~~
-cyc_name = 'HWFET';
+% cyc_name = 'HWFET';
 % cyc_name = 'UDDS';
 % cyc_name = 'US06';
 % cyc_name = 'SHORT_CYC_HWFET';
