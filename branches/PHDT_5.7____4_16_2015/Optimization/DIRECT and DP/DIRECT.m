@@ -1,3 +1,6 @@
+%~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~%
+%--------------------------------DIRECT-----------------------------------%
+%~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~%
 clear; % Clear the workspace
 close all; % Close all windows
 clc
@@ -9,8 +12,8 @@ RUN_TYPE.sim = 1;  % RUN_TYPE = 1 - for DIRECT     &    RUN_TYPE = 0 - for DP on
 RUN_TYPE.emiss_data = 1; % RUN_TYPE.emiss = 1 - maps have emissions  &   RUN_TYPE.emiss = 0 - maps do not have emissions
 RUN_TYPE.emiss_on = 1;  % This is to turn of and on emissions
 RUN_TYPE.plot = 0;  % RUN_TYPE.plot = 1 - plots on  &   RUN_TYPE.plot = 0 - plots off
-RUN_TYPE.soc_size = 0.005;
-RUN_TYPE.trq_size = 5;  % Nm
+RUN_TYPE.soc_size = 0.1;
+RUN_TYPE.trq_size = 15;  % Nm
 %~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~%
 %-----------------Weighing Parameters for DP------------------------------%
 %~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~%
@@ -20,12 +23,12 @@ if RUN_TYPE.emiss_data == 1  % This is just saying wheither or not the engine ma
         weight.NOx = 0*1.4776/0.0560;
         weight.CO = 0*1.4776/0.6835;
         weight.HC = 0*1.4776/0.0177;
-        RUN_TYPE.folder_name = '_DIRECT - no emiss';
+        RUN_TYPE.folder_name = '_DIRECT-no emiss_';
     else 
         weight.NOx = 2*1.4776/0.0560;
         weight.CO = 0.6*1.4776/0.6835;
         weight.HC = 4*1.4776/0.0177;
-        RUN_TYPE.folder_name = '_DIRECT - emiss';  
+        RUN_TYPE.folder_name = '_DIRECT-emiss_';  
     end
 end
 
@@ -109,10 +112,10 @@ Manipulate_Data_Structure;
 %---------------------Select Drive Cycle----------------------------------%
 %~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~%
 %                              ~~ Standard ~~
-cyc_name = 'HWFET';
+% cyc_name = 'HWFET';
 % cyc_name = 'UDDS';
 % cyc_name = 'US06';
-% cyc_name = 'SHORT_CYC_HWFET';
+cyc_name = 'SHORT_CYC_HWFET';
 % cyc_name = 'RAMP';
 % cyc_name = 'LA92';
 % cyc_name = 'CONST_65';
@@ -135,7 +138,6 @@ cyc_name = 'HWFET';
 %---------------------Run Optimization------------------------------------%
 %~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~%
 
-
 % Identify the Design Variables and their ranges    
 dv_names={ 'FD', 'G','fc_trq_scale','mc_trq_scale'};
 x_L=[    0.5*dvar.FD, 0.5*dvar.G, 0.5*dvar.fc_trq_scale, 0.5*dvar.mc_trq_scale]';
@@ -155,8 +157,8 @@ GLOBAL.epsilon = 1e-4;
 % Define the Objective function Name for the GRAPH
 resp_names={'DIRECT'};
 
-p_f='OBJECTIVE';
-p_c='CONSTRAINTS';
+p_f='objective';
+p_c='constraints';
 
 A=[];
 b_L=[];
@@ -167,7 +169,7 @@ prev_results_filename='DIRECT';
 
 if cont_bool==1
    eval(['load(''',prev_results_filename,''')']) 
-   GLOBAL = DP_optimization.GLOBAL;
+   GLOBAL = DIRECT.GLOBAL;
    GLOBAL.MaxEval = MaxEval;
    GLOBAL.MaxIter = MaxIter;
 else
@@ -184,19 +186,19 @@ plot_info.con_lb=num2cell(c_L);
 plot_info.fun_label=resp_names;
 
 % start the optimization                                                                          %    1          2          3          4            5             6          7         8          9         10           11          12       
-DP_optimization = gclSolve(p_f, p_c, x_L, x_U, A, b_L, b_U, c_L, c_U, I, GLOBAL, PriLev, plot_info, dv_names, resp_names, con_names, param_names, param_data, vinf_names, vinf_data, cyc_name, RUN_names, RUN_data, weight_names, weight_data );
+DIRECT = gclSolve(p_f, p_c, x_L, x_U, A, b_L, b_U, c_L, c_U, I, GLOBAL, PriLev, plot_info, dv_names, resp_names, con_names, param_names, param_data, vinf_names, vinf_data, cyc_name, RUN_names, RUN_data, weight_names, weight_data );
 
 % save the results
-cd('Results')
+cd('results')
 t = datetime;
 t.Format = 'eeee, MMMM d, yyyy';
 name = strcat(RUN_TYPE.folder_name,char(t));
 mkdir(name)
 cd(name)
-eval(['save(''',prev_results_filename,''',','''DP_optimization'');']) 
-cd ..
-cd ..
+eval(['save(''',prev_results_filename,''',','''DIRECT'');']) 
 
-PlotOptimResults(DP_optimization.GLOBAL.f_min_hist, plot_info)
+cd .. % Come back into main folder
+cd ..
+PlotOptimResults(DIRECT.GLOBAL.f_min_hist, plot_info)
 
 toc  % end timer

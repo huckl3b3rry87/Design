@@ -1,6 +1,8 @@
-clear; % Clear the workspace
+%~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~%
+%--------------------------Genetic Algorithm------------------------------%
+%~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~%
+clear;     % Clear the workspace
 close all; % Close all windows
-close all
 clc
 tic
 %~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~%
@@ -21,12 +23,12 @@ if RUN_TYPE.emiss_data == 1  % This is just saying wheither or not the engine ma
         weight.NOx = 0*1.4776/0.0560;
         weight.CO = 0*1.4776/0.6835;
         weight.HC = 0*1.4776/0.0177;
-        RUN_TYPE.folder_name = '_GA-NO Emissions';
+        RUN_TYPE.folder_name = '_GA-no emiss_';
     else 
         weight.NOx = 2*1.4776/0.0560;
         weight.CO = 0.6*1.4776/0.6835;
         weight.HC = 4*1.4776/0.0177;
-        RUN_TYPE.folder_name = '_GA-Emissions';  
+        RUN_TYPE.folder_name = '_GA-emiss_';  
     end
 end
 
@@ -73,7 +75,7 @@ Battery_ADVISOR;
 %                              ~~ Vehicle ~~
 Vehicle_Parameters_small_car;
 % Vehicle_Parameters_4_HI_AV;
-Vehicle_Parameters_4_HI;
+% Vehicle_Parameters_4_HI;
 % Vehicle_Parameters_8_HI_AV;
 % Vehicle_Parameters_8_HI;
 
@@ -140,36 +142,33 @@ cyc_name = 'SHORT_CYC_HWFET';
 %~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~%
 
 % Identify the Design Variables and their ranges    
-dv_names={ 'FD', 'G','fc_trq_scale','mc_trq_scale'};
-x_L=[    0.5*dvar.FD, 0.5*dvar.G, 0.5*dvar.fc_trq_scale, 0.5*dvar.mc_trq_scale]';
-x_U=[    1.5*dvar.FD, 1.5*dvar.G, 1.5*dvar.fc_trq_scale, 1.5*dvar.mc_trq_scale]';
-% set number of design variables
-nvars=4; % x1, x2, x3, x4 
+dv_names = { 'FD', 'G','fc_trq_scale','mc_trq_scale'};
+x_L = [    0.5*dvar.FD, 0.5*dvar.G, 0.5*dvar.fc_trq_scale, 0.5*dvar.mc_trq_scale]';
+x_U = [    1.5*dvar.FD, 1.5*dvar.G, 1.5*dvar.fc_trq_scale, 1.5*dvar.mc_trq_scale]';
+nvars = length(x_L); % Number of Deisgn Variables
 
-% Set the initial guess (Optional) - set the vectors of population size. 
-% If you use 100 populations and 4 design variables, 
-% initial guess will be 100 x 4 matrix
-ini=[dvar.FD,dvar.G,dvar.fc_trq_scale,dvar.mc_trq_scale]; % Please use GOOD and FEASIBLE initial guess if possible.
+ini=[dvar.FD,dvar.G,dvar.fc_trq_scale,dvar.mc_trq_scale]; % Use GOOD and FEASIBLE Initial Guess
 
-
-% Set objective function
+% Objective Function
 vfun=@(dvar)objective(dvar,param_names, param_data, vinf_names, vinf_data, cyc_name, RUN_names, RUN_data, weight_names, weight_data);
-% Set constraint function
+
+% Constraint Function
 nonlcon=@(dvar)constraint(dvar,param_names, param_data, vinf_names, vinf_data, cyc_name, RUN_names, RUN_data, weight_names, weight_data );
 
-% [gineq,geq] = nonlcon(ini);
+% To Check Feasibility
+% [gineq,geq] = nonlcon(ini);  
 
-%%
-% GA option settings
-populations=10; %set population size
-generations=30; %set number of generations
-time = 60*5;  % time in (s)
+
+%% GA Option Settings
+populations=10; % Population Size
+generations=30; % Number of Generations
+time = 60*5;    % Time in (s)
 stall_gen = 150;
-tol = 1e-3; % average change in the spread of Pareto solutions ( termination criteria )
-% @gaplotbestfun will show you a convergence plot. Based on this, tune population size and number of generations 
-options = gaoptimset('Vectorized','off','InitialPopulation',ini,'TolFun',tol,'PopulationSize',populations,'Generations',generations,'StallGenLimit', stall_gen,'TimeLimit',time,'PlotFcns',{@gaplotpareto,@gaplotscorediversity,@gaplotbestf,@gaplotstopping});
+tol = 1e-3; % Average Change in the Spread of Pareto Solutions ( termination criteria )
+% options = gaoptimset('Vectorized','off','InitialPopulation',ini,'TolFun',tol,'PopulationSize',populations,'Generations',generations,'StallGenLimit', stall_gen,'TimeLimit',time,'PlotFcns',{@gaplotpareto,@gaplotscorediversity,@gaplotbestf,@gaplotstopping});
+options = gaoptimset('Vectorized','off','InitialPopulation',ini,'TolFun',tol,'PopulationSize',populations,'Generations',generations,'StallGenLimit', stall_gen,'TimeLimit',time,'PlotFcns',{@gaplotpareto});
 
-%% Solve problem 
+% Run The Optimization
 [x,fval,exitflag,output] = gamultiobj(vfun,nvars,[],[],[],[],x_L,x_U,nonlcon,options);
 fprintf('The number of generations was : %d\n', output.generations);
 fprintf('The number of function evaluations was : %d\n', output.funccount);
@@ -178,11 +177,16 @@ fprintf('The number of points on the Pareto front was: %d\n', size(x,1));
 fprintf('The average distance measure of the solutions on the Pareto front was: %g\n', output.averagedistance);
 fprintf('The spread measure of the Pareto front was: %g\n', output.spread);
 
-mkdir('GA_results')
-cd('GA_results')
+% Save the Results
+t = datetime;
+t.Format = 'eeee, MMMM d, yyyy';
+name = strcat(RUN_TYPE.folder_name,char(t));
+
+cd('results')  % The Folder that has all of the results
+mkdir(name)
+cd(name)
 eval(['save(''','output',''',','''output'');'])
 eval(['save(''','dv',''',','''x'');'])
 eval(['save(''','obj',''',','''fval'');'])
 cd ..
-
 toc

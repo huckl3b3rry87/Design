@@ -1,4 +1,4 @@
-function obj = OBJECTIVE(x,varargin)
+function obj = objective(x,varargin)
 
 param =  cell2struct(varargin{5}, varargin{4},1);
 vinf =  cell2struct(varargin{7}, varargin{6},1);
@@ -25,13 +25,12 @@ Manipulate_Data_Structure; % Need to recalcualte the Tw for the ne vehicle mass
 %---------------------Run DP with new Data--------------------------------%
 %~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~%    
 
-[FAIL, MPG, emission, delta_SOC, sim] = Dynamic_Programming_func(param, vinf, dvar, cyc_data, RUN_TYPE, weight);
-obj = -MPG + weight.NOx*emission.NOx + weight.CO*emission.CO + weight.HC*emission.HC; 
+[FAIL, MPG, emission, delta_SOC, ~] = Dynamic_Programming_func(param, vinf, dvar, cyc_data, RUN_TYPE, weight);
 
 if ~FAIL.final && ~isempty(MPG) && ~isempty(emission.NOx) && ~isempty(emission.CO) && ~isempty(emission.HC)
     obj = -MPG + weight.NOx*emission.NOx + weight.CO*emission.CO + weight.HC*emission.HC; 
 else
-    obj = 10^10;  % doing something like this may not be appropriate
+    obj = 10^10;    % doing something like this may not be appropriate
     FAIL.final = 1; % Make Sure it Fails
 end
 

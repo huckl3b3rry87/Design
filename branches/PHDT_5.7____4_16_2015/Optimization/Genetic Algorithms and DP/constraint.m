@@ -25,7 +25,7 @@ Manipulate_Data_Structure; % Need to recalcualte the Tw for the ne vehicle mass
 %---------------------Run DP with new Data--------------------------------%
 %~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~%    
 
-[FAIL, MPG, emission, delta_SOC, sim] = Dynamic_Programming_func(param, vinf, dvar, cyc_data, RUN_TYPE, weight);
+[FAIL, MPG, emission, delta_SOC,~] = Dynamic_Programming_func(param, vinf, dvar, cyc_data, RUN_TYPE, weight);
 
 % if ~FAIL.final && ~isempty(MPG) && ~isempty(emission.NOx) && ~isempty(emission.CO) && ~isempty(emission.HC)
 %     obj = -MPG + weight.NOx*emission.NOx + weight.CO*emission.CO + weight.HC*emission.HC; 
@@ -68,7 +68,7 @@ V_f = 60;
 dt_2 = 12;
 Acc_Final_new = 100;  % Does not matter
 TYPE = 1; % Velocity req.
-[ pass_acc_test(n), Sim_Variables ] = Acceleration_Test(V_0,V_f, Acc_Final_new, dt_2, param, vinf, dvar, TYPE);
+[ pass_acc_test(n),~] = Acceleration_Test(V_0,V_f, Acc_Final_new, dt_2, param, vinf, dvar, TYPE);
 
 % dt_2 = 0.0002;
 % load V_0;
@@ -90,7 +90,7 @@ else
 end
 
 %~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~%
-%-----------------------------Grade Test----------------------------------%
+%-----------------------------Grade Tests---------------------------------%
 %~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~%
 
 %--------------------------Set Requirements--------------------------------
@@ -106,14 +106,12 @@ r = 2;
 V_test(r) = 55*param.mph_mps;
 alpha_test(r) = 5*pi/180;
 
-[Sim_Grade, FAIL_GRADE_TEST] = Grade_Test( param, vinf, dvar, alpha_test, V_test, Motor_ON );
+[~, FAIL_GRADE_TEST] = Grade_Test( param, vinf, dvar, alpha_test, V_test, Motor_ON );
 
 if ~isempty(FAIL_GRADE_TEST)
     geq(3)= FAIL_GRADE_TEST;
 else
     geq(3) = 0;
 end
-
 cd .. 
-
 return
