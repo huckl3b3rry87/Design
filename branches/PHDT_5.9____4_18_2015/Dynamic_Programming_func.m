@@ -5,9 +5,11 @@ function [FAIL, MPG, emission, delta_SOC, sim] = Dynamic_Programming_func(param,
 %~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~%
 %---------------------Create New Tables-----------------------------------%
 %~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~%
-tables = [cyc_data.cyc_name, RUN_TYPE.folder_name, ' TABLES'];
-mkdir(tables)
-rmdir(tables,'s')                 % Delete any left over info
+tables = [cyc_data.cyc_name, RUN_TYPE.folder_name, ' tables'];
+check_exist = exist(fullfile(cd,tables),'dir');
+if check_exist == 7
+    rmdir(tables,'s')                 % Delete any left over info
+end
 mkdir(tables)
 cd(tables);
 %~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~%

@@ -1,5 +1,8 @@
-% clear; 
-close all; 
+%~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~%
+%--------------------------------DIRECT-----------------------------------%
+%~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~%
+clear; % Clear the workspace
+close all; % Close all windows
 clc
 tic
 %~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~%
@@ -7,10 +10,10 @@ tic
 %~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~%
 RUN_TYPE.sim = 1;  % RUN_TYPE = 1 - for DIRECT     &    RUN_TYPE = 0 - for DP only
 RUN_TYPE.emiss_data = 1; % RUN_TYPE.emiss = 1 - maps have emissions  &   RUN_TYPE.emiss = 0 - maps do not have emissions
-% RUN_TYPE.emiss_on = 0;  % This is to turn off and on emissions
+RUN_TYPE.emiss_on = 1;  % This is to turn of and on emissions
 RUN_TYPE.plot = 0;  % RUN_TYPE.plot = 1 - plots on  &   RUN_TYPE.plot = 0 - plots off
-RUN_TYPE.soc_size = 0.001;
-RUN_TYPE.trq_size = 5;  % Nm
+RUN_TYPE.soc_size = 0.1;
+RUN_TYPE.trq_size = 15;  % Nm
 %~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~%
 %-----------------Weighing Parameters for DP------------------------------%
 %~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~%
@@ -20,12 +23,12 @@ if RUN_TYPE.emiss_data == 1  % This is just saying wheither or not the engine ma
         weight.NOx = 0*1.4776/0.0560;
         weight.CO = 0*1.4776/0.6835;
         weight.HC = 0*1.4776/0.0177;
-        RUN_TYPE.folder_name = '_LHC - no emiss';
-    else
+        RUN_TYPE.folder_name = ' DIRECT-no emiss_';
+    else 
         weight.NOx = 2*1.4776/0.0560;
         weight.CO = 0.6*1.4776/0.6835;
         weight.HC = 4*1.4776/0.0177;
-        RUN_TYPE.folder_name = '_LHC - emiss';
+        RUN_TYPE.folder_name = ' DIRECT-emiss_';  
     end
 end
 
@@ -104,7 +107,7 @@ dvar.module_number = 38;
 %~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~%
 %---------------------Update the Data-------------------------------------%
 %~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~%
-Manipulate_Data_Structure;
+Manipulate_Data_Structure; 
 %~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~%
 %---------------------Select Drive Cycle----------------------------------%
 %~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~%
@@ -112,7 +115,7 @@ Manipulate_Data_Structure;
 % cyc_name = 'HWFET';
 % cyc_name = 'UDDS';
 % cyc_name = 'US06';
-% cyc_name = 'SHORT_CYC_HWFET';
+cyc_name = 'SHORT_CYC_HWFET';
 % cyc_name = 'RAMP';
 % cyc_name = 'LA92';
 % cyc_name = 'CONST_65';
@@ -125,161 +128,77 @@ Manipulate_Data_Structure;
 % cyc_name = 'Nuremberg';
 % cyc_name = 'NYCC';
 % cyc_name = 'AA_final';
-
 %                              ~~ AV~~
+
 % cyc_name = 'US06_AV';
 % cyc_name = 'HWFET_AV';
 % cyc_name = 'AA_final_AV';
-
 [cyc_data] = Drive_Cycle(param, vinf, cyc_name);
-
 %~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~%
 %---------------------Run Optimization------------------------------------%
 %~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~%
 
-% Identify the Design Variables and their ranges
+% Identify the Design Variables and their ranges    
 dv_names={ 'FD', 'G','fc_trq_scale','mc_trq_scale'};
 x_L=[    0.5*dvar.FD, 0.5*dvar.G, 0.5*dvar.fc_trq_scale, 0.5*dvar.mc_trq_scale]';
 x_U=[    1.5*dvar.FD, 1.5*dvar.G, 1.5*dvar.fc_trq_scale, 1.5*dvar.mc_trq_scale]';
 
-%    FAIL.final     fail.acc_test     fail.grade_test
-g_eq = [0,               0,               0];
+SS = 10^6;
+con_names={'FAIL',         'delta_SOC',       'MPG',  'NOx',    'CO',  'HC',  'FAIL_ACCEL_TEST', 'FAIL_GRADE_TEST', }; % They Also Did not Do Grade and Acceleration Tests!
+c_L=[          0;      -RUN_TYPE.soc_size;      0;      0;        0;     0;           0;                 0];
+c_U=[          0;       RUN_TYPE.soc_size;     SS;     SS;       SS;     SS;          0;                 0];
 
-%          delta_soc
-c_L = [-RUN_TYPE.soc_size];
-c_U =  [RUN_TYPE.soc_size];
+% Define the Problem
+PriLev = 2;                      % 1 is no graph 2 shows a graph
+MaxEval = 5;
+MaxIter = 4;
+GLOBAL.epsilon = 1e-4;
 
-n = 500;
-dv = 4;
-X_temp = lhsdesign(n,dv);
+% Define the Objective function Name for the GRAPH
+resp_names={'DIRECT'};
 
-for nn = 1:n
-    for pp = 1:dv
-        X(nn,pp) = x_L(pp) + X_temp(nn,pp)*(x_U(pp) - x_L(pp));
-    end
+p_f='objective';
+p_c='constraints';
+
+A=[];
+b_L=[];
+b_U=[];
+I=[];
+cont_bool=0;    % Continue from a Previous Run??
+prev_results_filename='DIRECT';
+
+if cont_bool==1
+   eval(['load(''',prev_results_filename,''')']) 
+   GLOBAL = DIRECT.GLOBAL;
+   GLOBAL.MaxEval = MaxEval;
+   GLOBAL.MaxIter = MaxIter;
+else
+   GLOBAL.MaxEval = MaxEval;
+   GLOBAL.MaxIter = MaxIter;
 end
 
-rr = 1;   % Initialize feasible counter
-for nn = 1:n
-    geq = [];
-    gineq = [];
-    
-    x = [X(nn,1); X(nn,2); X(nn,3); X(nn,4)];
-    
-    %~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~%
-    %----------------Update the Design Variables------------------------------%
-    %~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~%
-    dvar.FD = x(1);
-    dvar.G = x(2);
-    dvar.fc_trq_scale = x(3);
-    dvar.mc_trq_scale = x(4);
-    dvar.module_number = 38;  % Fixed (for now) - should be passing this..
-    %~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~%
-    %-----------Manipulate Data Based of Scaling Factors----------------------%
-    %~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~%
-    Manipulate_Data_Structure; % Need to recalcualte the Tw for the ne vehicle mass
-    
-    [cyc_data] = Drive_Cycle(param, vinf, cyc_name );
-    
-    [FAIL, MPG, emission, delta_SOC, sim] = Dynamic_Programming_func(param, vinf, dvar, cyc_data, RUN_TYPE, weight);
-    
-    if ( isnan(MPG) || isnan(emission.NOx) || isnan(emission.CO) || isnan(emission.HC) || FAIL.final || isempty(MPG) || isempty(emission.NOx) || isempty(emission.CO) || isempty(emission.HC))
-        FAIL_LHC = 1;
-        gineq(1) = 1;
-        geq(1) = 1;
-    else
-        FAIL_LHC = 0;
-        gineq(1) = -RUN_TYPE.soc_size + abs(delta_SOC);
-        geq(1) = FAIL.final;
-    end
-    %~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~%
-    %-------------------------Acceleration Tests ------------------------------%
-    %~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~%
-    cd('Initial Component Sizing')
-    V_0 = 0;
-    V_f = 60;
-    dt_2 = 12;
-    Acc_Final_new = [];  % Does not matter TYPE 1
-    TYPE = 1; % Velocity req.
-    [ pass_acc_test, Sim_Variables ] = Acceleration_Test(V_0,V_f, Acc_Final_new, dt_2, param, vinf, dvar, TYPE);
-    
-    fail_acc_test = ~pass_acc_test;
-    FAIL_ACCEL_TEST = any(fail_acc_test);
-    
-    if ~isempty(FAIL_ACCEL_TEST)
-        geq(2)= FAIL_ACCEL_TEST;
-    else
-        geq(2)= 1; % Fail it
-    end
-    
-    %~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~%
-    %-----------------------------Grade Test----------------------------------%
-    %~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~%
-    
-    %--------------------------Set Requirements--------------------------------
-    Motor_ON = 1;
-    
-    % Test 1
-    r = 1;
-    V_test(r) = 80*param.mph_mps;  % Max Speed
-    alpha_test(r) = 0*pi/180;
-    
-    % Test 2
-    r = 2;
-    V_test(r) = 55*param.mph_mps;
-    alpha_test(r) = 5*pi/180;
-    
-    [Sim_Grade, FAIL_GRADE_TEST] = Grade_Test( param, vinf, dvar, alpha_test, V_test, Motor_ON );
-    
-    if ~isempty(FAIL_GRADE_TEST)
-        geq(3)= FAIL_GRADE_TEST;
-    else
-        geq(3) = 1;  % Fail it
-    end
-    
-    % Check equality constraints
-    for L = 1:size(geq)
-        if (geq(L) ~= g_eq(L))
-            fail_eq_con(L) = 1;
-        else
-            fail_eq_con(L) = 0;
-        end
-    end
-    
-    % Check inequality constraints
-    for L = 1:size(gineq)
-        if ((c_L(L) > gineq(L)) || c_U(L) < gineq(L))
-            fail_ineq_con(L) = 1;
-        else
-            fail_ineq_con(L) = 0;
-        end
-    end
-    
-    if FAIL_LHC || any(fail_ineq_con) || any(fail_eq_con)
-        FAIL_LHC(nn) = 1;
-    else
-        FAIL_LHC(nn) = 0;
-        X_save(rr,:) = x;
-        MPG_save(rr) = MPG;
-        NOx_save(rr) = emission.NOx;
-        CO_save(rr) = emission.CO;
-        HC_save(rr) = emission.HC;
-        rr = rr + 1;
-    end
-    cd .. % back into the main folder
-end
+plot_info.var_label=dv_names;
+plot_info.var_ub=num2cell(x_U);
+plot_info.var_lb=num2cell(x_L);
+plot_info.con_label=con_names;
+plot_info.con_ub=num2cell(c_U);
+plot_info.con_lb=num2cell(c_L);
+plot_info.fun_label=resp_names;
 
-cd('Results')
+% start the optimization                                                                          %    1          2          3          4            5             6          7         8          9         10           11          12       
+DIRECT = gclSolve(p_f, p_c, x_L, x_U, A, b_L, b_U, c_L, c_U, I, GLOBAL, PriLev, plot_info, dv_names, resp_names, con_names, param_names, param_data, vinf_names, vinf_data, cyc_name, RUN_names, RUN_data, weight_names, weight_data );
+
+% save the results
+cd('results')
 t = datetime;
 t.Format = 'eeee, MMMM d, yyyy';
 name = strcat(RUN_TYPE.folder_name,char(t));
 mkdir(name)
 cd(name)
+eval(['save(''',prev_results_filename,''',','''DIRECT'');']) 
 
-if rr > 1
-    eval(['save(''','MPG',''',','''MPG_save'');'])
-    eval(['save(''','DV',''',','''X_save'');'])
-    eval(['save(''','NOx',''',','''NOx_save'');'])
-    eval(['save(''','CO',''',','''CO_save'');'])
-    eval(['save(''','HC',''',','''HC_save'');'])
-end
+cd .. % Come back into main folder
+cd ..
+PlotOptimResults(DIRECT.GLOBAL.f_min_hist, plot_info)
+
+toc  % end timer

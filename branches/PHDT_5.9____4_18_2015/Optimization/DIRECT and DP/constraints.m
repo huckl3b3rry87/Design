@@ -5,7 +5,7 @@ offset=length(con);
 
 param =  cell2struct(varargin{5}, varargin{4},1);
 vinf =  cell2struct(varargin{7}, varargin{6},1);
-% RUN_TYPE =  cell2struct(varargin{10}, varargin{9},1);
+RUN_TYPE =  cell2struct(varargin{10}, varargin{9},1);
 
 %~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~%
 %----------------Update the Design Variables------------------------------%
