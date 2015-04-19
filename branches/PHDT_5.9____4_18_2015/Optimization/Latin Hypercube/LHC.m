@@ -260,10 +260,10 @@ for nn = 1:n
     else
         FAIL_LHC(nn) = 0;
         X_save(rr,:) = x;
-        MPG_save(rr) = MPG;
-        NOx_save(rr) = emission.NOx;
-        CO_save(rr) = emission.CO;
-        HC_save(rr) = emission.HC;
+        MPG_save(1,rr) = MPG;
+        NOx_save(1,rr) = emission.NOx;
+        CO_save(1,rr) = emission.CO;
+        HC_save(1,rr) = emission.HC;
         rr = rr + 1;
     end
     cd .. % back into the main folder
